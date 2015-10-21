@@ -21,7 +21,8 @@ void main() {
     //Indicate that the coordinates are normalized
     gl_Position.w = 1.0;
     
-    fragmentPosition = vertexPosition;
+    fragmentPosition.x = vertexPosition.x;
+	fragmentPosition.y = -vertexPosition.y;
     
     fragmentColor = vertexColor;
     

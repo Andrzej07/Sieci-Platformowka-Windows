@@ -27,6 +27,8 @@ void App::initSystems()
 	m_camera.init(m_screenWidth, m_screenHeight);
 	m_spriteBatch.init();
 
+	glm::vec2 playerPos = m_level.load("Levels/level.xxx");
+
 	// Init players
 	m_player1.init(glm::vec2(0), glm::vec2(PLAYER_SIZE), "Assets/dude.png");
 }
@@ -55,6 +57,7 @@ void App::runLoop()
 		// Poll SDL events for input
 		processInput();
 		// Recalculate camera matrix if needed
+		m_camera.setPosition(m_player1.getPosition());
 		m_camera.update();
 		// Update physics, objects etc
 		update(m_timer.getFrameTime() / 1000.0f);
@@ -87,9 +90,13 @@ void App::draw()
 	// DRAW STUFF using m_spriteBatch.draw
 	// TODO: Draw world and players
 	// NOTE: Use culling with m_camera.isBoxInView
+
+	m_level.draw(m_spriteBatch);
 	m_player1.draw(m_spriteBatch);
+
 	// Test-example draw
 /*	glm::vec4 destRect; // POSITION and SIZE  (x_pos, y_pos, x_size, y_size)
+	// Position is bottom left corner
 	destRect = glm::vec4(0, 0, 10.0f, 10.0f);
 	glm::vec4 uvRect = glm::vec4(0, 0, 1.0f, 1.0f);  // TEXTURE COORDINATES
 	GLTexture texture = ResourceManager::getTexture("Assets/dude.png"); // TEXTURE PICTURE returns struct containing SIZE and OpenGL texture handle
@@ -102,7 +109,7 @@ void App::draw()
 void App::update(float frameTime)
 {
 	// TODO: Update player state
-	m_player1.update(frameTime);
+	m_player1.update(frameTime, m_level, &m_inputManager);
 }
 void App::processInput()
 {
@@ -138,18 +145,8 @@ void App::processInput()
 		SDL_Quit();
 		exit(0);
 	}
-	const float cameraSpeed = 0.5f;
-	glm::vec2 cameraPos = m_camera.getPosition();
-	float scale = m_camera.getScale();
-	if (m_inputManager.isKeyDown(SDLK_a))
-		m_camera.setPosition(cameraPos - glm::vec2(cameraSpeed, 0));
-	if (m_inputManager.isKeyDown(SDLK_d))
-		m_camera.setPosition(cameraPos + glm::vec2(cameraSpeed, 0));
-	if (m_inputManager.isKeyDown(SDLK_w))
-		m_camera.setPosition(cameraPos + glm::vec2(0, cameraSpeed));
-	if (m_inputManager.isKeyDown(SDLK_s))
-		m_camera.setPosition(cameraPos - glm::vec2(0, cameraSpeed));  
 
+	float scale = m_camera.getScale();
 	if (m_inputManager.isKeyDown(SDLK_q))
 		m_camera.setScale(scale + 0.1f);
 	if (m_inputManager.isKeyDown(SDLK_e))

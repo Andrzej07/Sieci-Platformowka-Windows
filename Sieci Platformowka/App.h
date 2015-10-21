@@ -6,6 +6,7 @@
 #include "Window.h"
 #include "Timer.h"
 #include "Player.h"
+#include "Level.h"
 // MOVE TO PLAYER CLASS
 #include "InputManager.h"
 
@@ -26,6 +27,7 @@ private:
 	void update(float frameTime);
 	void processInput();
 
+	Level m_level;
 	Timer m_timer;
 	Window m_window;
 	InputManager m_inputManager;
