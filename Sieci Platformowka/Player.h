@@ -10,7 +10,7 @@ public:
 	~Player();
 
 	void init(const glm::vec2 &pos, const glm::vec2 &size, const std::string &texturePath);
-	void update(unsigned int frameTime);
+	void update(float frameTime);
 	void draw(SpriteBatch &spriteBatch);
 
 private:

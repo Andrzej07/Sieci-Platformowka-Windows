@@ -23,7 +23,7 @@ private:
 	void initShaders();
 	void runLoop();
 	void draw();
-	void update(unsigned int frameTime);
+	void update(float frameTime);
 	void processInput();
 
 	Timer m_timer;

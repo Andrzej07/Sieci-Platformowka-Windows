@@ -99,7 +99,7 @@ void App::draw()
 	m_spriteBatch.renderBatch();
 	m_shaderProgram.unuse();
 }
-void App::update(unsigned int frameTime)
+void App::update(float frameTime)
 {
 	// TODO: Update player state
 	m_player1.update(frameTime);

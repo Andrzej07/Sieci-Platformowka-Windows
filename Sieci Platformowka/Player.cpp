@@ -17,7 +17,7 @@ void Player::init(const glm::vec2 &pos, const glm::vec2 &size, const std::string
 	m_texture = ResourceManager::getTexture(texturePath);
 }
 
-void Player::update(unsigned int frameTime)
+void Player::update(float frameTime)
 {
 
 }
