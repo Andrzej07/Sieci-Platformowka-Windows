@@ -22,9 +22,10 @@ void Player::update(float frameTime, const Level& level, InputManager* inputMana
 {
 	const std::vector<Block> *levelData = &level.getLevelData();
 	// For testing
-	if (inputManager->isKeyDown(SDLK_w))
+	if (inputManager->isKeyPressed(SDLK_w))
 	{
-		m_pos.y += m_acceleration.y/3;
+		//m_pos.y += m_acceleration.y;
+		m_velocity.y += m_acceleration.y*10;
 	}
 	else if (inputManager->isKeyDown(SDLK_s))
 	{
@@ -97,11 +98,22 @@ void Player::update(float frameTime, const Level& level, InputManager* inputMana
 			collided[BOTTOM] = true;
 		}
 
-		if (collided[BOTTOM] && (collided[LEFT] || collided[RIGHT]))
+		if (collisionDepth[BOTTOM] && (collided[LEFT] || collided[RIGHT]))
 		{
 			isGrounded = true;
-			m_velocity.y = 0.0f;
+			if (m_velocity.y < 0)
+				m_velocity.y = 0.0f;
 			m_pos.y += collisionDepth[BOTTOM] - 0.01f;
+		}
+		if (collisionDepth[LEFT] && (collided[TOP] || collided[BOTTOM]))
+		{
+			m_velocity.x = 0.0f;
+		//	m_pos.x += collisionDepth[LEFT];
+		}
+		if (collisionDepth[RIGHT] && (collided[TOP] || collided[BOTTOM]))
+		{
+			m_velocity.x = 0.0f;
+			m_pos.x -= collisionDepth[RIGHT] + 0.01f;
 		}
 	//	if (collided[BOTTOM])
 	//	if (collisionDepth[LEFT] + collisionDepth[BOTTOM] + collisionDepth[TOP] + collisionDepth[RIGHT] > 0)
@@ -111,7 +123,7 @@ void Player::update(float frameTime, const Level& level, InputManager* inputMana
 	// Gravity
 	if (!isGrounded)
 	{
-		const float GRAVITY_POWA = 5.0f;
+		const float GRAVITY_POWA = 1.5f;
 		m_velocity -= glm::vec2(0, GRAVITY_POWA);
 	}
 
