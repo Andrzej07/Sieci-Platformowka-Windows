@@ -19,7 +19,7 @@ glm::vec2 Level::load(const std::string &filepath)
 
 	// read blocks from file
 	m_levelData.emplace_back(glm::vec2(-10.0f), glm::vec2(100.0f, 5.0f));
-
+	m_levelData.emplace_back(glm::vec2(30.0f), glm::vec2(50.0f, 25.0f));
 	// read player position from file and return it
 	return glm::vec2(0.0f);
 }
