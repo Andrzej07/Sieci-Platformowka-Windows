@@ -16,7 +16,10 @@ glm::vec2 Level::load(const std::string &filepath)
 	m_texture = ResourceManager::getTexture("Assets/dude.png");
 
 	// read finish line ?
-
+	for (int i = 0; i < 500; ++i)
+	{
+		m_levelData.emplace_back(glm::vec2(100.0f - i*10.0f, 60.0f), glm::vec2(10.0f, 6.0f));
+	}
 	// read blocks from file
 	m_levelData.emplace_back(glm::vec2(-10.0f), glm::vec2(100.0f, 5.0f));
 	m_levelData.emplace_back(glm::vec2(30.0f), glm::vec2(50.0f, 25.0f));

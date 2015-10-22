@@ -31,7 +31,7 @@ private:
 	void resolveCollisions(const Level& level, bool& isGrounded);
 
 	bool m_isJumping = true;
-	glm::vec2 m_acceleration = glm::vec2(15.5f, 5.0f); // running and jumping accel
+	glm::vec2 m_acceleration = glm::vec2(16.5f, 5.0f); // running and jumping accel
 	glm::vec2 m_velocity = glm::vec2(0);
 	glm::vec2 m_maxVelocity = m_acceleration * 3.0f;
 

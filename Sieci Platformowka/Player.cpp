@@ -87,14 +87,14 @@ void Player::resolveCollisions(const Level& level, bool& isGrounded)
 		if (!isGrounded)
 		{
 			// Create box for detecting grounding
-			Block groundBlock(glm::vec2(m_pos.x + 0.2f, m_pos.y - 0.1f), glm::vec2(m_size.x - 0.4f, 0.2f));
+			Block groundBlock(glm::vec2(m_pos.x + 0.6f, m_pos.y - 0.1f), glm::vec2(m_size.x - 1.2f, 0.2f));
 			float groundCenterX = groundBlock.pos.x + groundBlock.size.x / 2;
 			float groundCenterY = groundBlock.pos.y + groundBlock.size.y / 2;
 			float blockCenterX = block.pos.x + block.size.x / 2;
 			float blockCenterY = block.pos.y + block.size.y / 2;
 			bool x = (fabs(groundCenterX - blockCenterX) < (groundBlock.size.x + block.size.x) / 2);
 			bool y = (fabs(groundCenterY - blockCenterY) < (groundBlock.size.y + block.size.y) / 2);
-			if (x && y) isGrounded = true; 
+			isGrounded = x && y;
 		}
 	}
 
@@ -114,7 +114,7 @@ void Player::resolveCollisions(const Level& level, bool& isGrounded)
 	//	{
 //			isGrounded = true;
 	//	}
-	}
+	} 
 
 	// Resolve in air wall collisions
 	if (!isGrounded)
@@ -126,12 +126,14 @@ void Player::resolveCollisions(const Level& level, bool& isGrounded)
 				if (hitsRightOf(collidingBlocks[i]))
 				{
 					pushOffX(collidingBlocks[i]);
+					collidingBlocks.erase(collidingBlocks.begin() + i);
 					if (m_velocity.x < 0.0f)
 						m_velocity.x = 0.0f;
 				}
 				else if (hitsLeftOf(collidingBlocks[i]))
 				{
 					pushOffX(collidingBlocks[i]);
+					collidingBlocks.erase(collidingBlocks.begin() + i);
 					if (m_velocity.x > 0.0f)
 						m_velocity.x = 0.0f;
 				}
@@ -176,7 +178,6 @@ void Player::resolveCollisions(const Level& level, bool& isGrounded)
 
 void Player::update(float frameTime, const Level& level, InputManager* inputManager)
 {
-
 	// Update velocity based on input
 	if (inputManager->isKeyDown(SDLK_a))
 	{
@@ -202,21 +203,11 @@ void Player::update(float frameTime, const Level& level, InputManager* inputMana
 			m_velocity = glm::vec2(0, m_velocity.y);
 	}
 	
-	// Check for collisions
+
 	bool isGrounded = false;
 
 	// Check for collisions
 	resolveCollisions(level, isGrounded);
-
-	if (inputManager->isKeyDown(SDLK_w))
-	{
-//		m_pos.y += 0.3f;
-	}
-
-	if (inputManager->isKeyDown(SDLK_s))
-	{
-		m_pos.y -= 0.3f;
-	}
 
 	// Gravity
 	if (!isGrounded)
@@ -227,13 +218,14 @@ void Player::update(float frameTime, const Level& level, InputManager* inputMana
 	else
 	{
 	// Can jump
+		m_velocity.y = 0.0f;
 		if (inputManager->isKeyPressed(SDLK_w))
 		{
 			//m_pos.y += m_acceleration.y;
-			m_velocity.y += m_acceleration.y * 10;
+			m_velocity.y += m_acceleration.y * 20;
 		}
 	}
-	printf("On Ground %d\n", (int)isGrounded);
+//	printf("On Ground %d\n", (int)isGrounded);
 
 	// Update position
 	m_pos += frameTime * m_velocity;

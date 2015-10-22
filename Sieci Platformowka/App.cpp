@@ -60,7 +60,8 @@ void App::runLoop()
 		m_camera.setPosition(m_player1.getPosition());
 		m_camera.update();
 		// Update physics, objects etc
-		update(m_timer.getFrameTime() / 1000.0f);
+		while (m_timer.canGetTimeChunk())
+			update(m_timer.getTimeChunk());
 		// Draw game
 		draw();
 		m_window.swapBuffer();
