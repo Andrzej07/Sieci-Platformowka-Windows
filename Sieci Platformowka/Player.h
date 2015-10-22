@@ -5,6 +5,7 @@
 #include "InputManager.h"
 class SpriteBatch;
 class Level;
+struct Block;
 class Player
 {
 public:
@@ -18,6 +19,16 @@ public:
 	glm::vec2 getPosition() const { return m_pos; }
 private:
 	//InputManager m_inputManager;
+	bool intersects(const Block& block);
+	bool hitsTopOf(const Block& block);
+	bool hitsRightOf(const Block& block);
+	bool hitsLeftOf(const Block& block);
+	bool hitsBottomOf(const Block& block);
+	void pushOffY(const Block& block);
+	void pushOffX(const Block& block);
+	float XOverlap(const Block& block);
+	float YOverlap(const Block& block);
+	void resolveCollisions(const Level& level, bool& isGrounded);
 
 	bool m_isJumping = true;
 	glm::vec2 m_acceleration = glm::vec2(15.5f, 5.0f); // running and jumping accel

@@ -18,19 +18,165 @@ void Player::init(const glm::vec2 &pos, const glm::vec2 &size, const std::string
 	m_texture = ResourceManager::getTexture(texturePath);
 }
 
-void Player::update(float frameTime, const Level& level, InputManager* inputManager)
+bool Player::intersects(const Block& block)
+{
+	return ((hitsTopOf(block) || hitsBottomOf(block)) && (hitsLeftOf(block) || hitsRightOf(block)));
+}
+bool Player::hitsRightOf(const Block& block)
+{
+	return (block.pos.x < m_pos.x) && (block.pos.x + block.size.x > m_pos.x);
+}
+bool Player::hitsLeftOf(const Block& block)
+{
+	return (m_pos.x < block.pos.x) && (m_pos.x + m_size.x > block.pos.x);
+}
+bool Player::hitsTopOf(const Block& block)
+{
+	return (block.pos.y <= m_pos.y) && (block.pos.y + block.size.y > m_pos.y);
+}
+bool Player::hitsBottomOf(const Block& block)
+{
+	return (m_pos.y < block.pos.y) && (m_pos.y + m_size.y > block.pos.y);
+}
+void Player::pushOffY(const Block& block)
+{
+	if (hitsTopOf(block))
+		m_pos.y += block.pos.y + block.size.y - m_pos.y;
+	else if (hitsBottomOf(block))
+		m_pos.y -= m_pos.y + m_size.y - block.pos.y;
+}
+void Player::pushOffX(const Block& block)
+{
+	if (hitsLeftOf(block))
+		m_pos.x -= (m_pos.x + m_size.x - block.pos.x);
+	else if (hitsRightOf(block))
+		m_pos.x += (block.pos.x + block.size.x - m_pos.x);
+}	
+float Player::XOverlap(const Block& block)
+{
+	if (hitsBottomOf(block) || hitsTopOf(block))
+	{
+		if (hitsLeftOf(block))
+			return m_pos.x + m_size.x - block.pos.x;
+		else if (hitsRightOf(block))
+			return block.pos.x + block.size.x - m_pos.x;
+	}
+	return 0;
+}
+float Player::YOverlap(const Block& block)
+{
+	if (hitsLeftOf(block) || hitsRightOf(block))
+	{
+		if (hitsTopOf(block))
+			return block.pos.y + block.size.y - m_pos.y;
+		else if (hitsBottomOf(block))
+			return m_pos.y + m_size.y - block.pos.y;
+	}
+	return 0;
+}
+
+void Player::resolveCollisions(const Level& level, bool& isGrounded)
 {
 	const std::vector<Block> *levelData = &level.getLevelData();
-	// For testing
-	if (inputManager->isKeyPressed(SDLK_w))
+	std::vector<Block> collidingBlocks;
+	collidingBlocks.reserve(4);
+	for (auto& block : *levelData)
 	{
-		//m_pos.y += m_acceleration.y;
-		m_velocity.y += m_acceleration.y*10;
+		if (intersects(block))
+			collidingBlocks.push_back(block);
+		if (!isGrounded)
+		{
+			// Create box for detecting grounding
+			Block groundBlock(glm::vec2(m_pos.x + 0.2f, m_pos.y - 0.1f), glm::vec2(m_size.x - 0.4f, 0.2f));
+			float groundCenterX = groundBlock.pos.x + groundBlock.size.x / 2;
+			float groundCenterY = groundBlock.pos.y + groundBlock.size.y / 2;
+			float blockCenterX = block.pos.x + block.size.x / 2;
+			float blockCenterY = block.pos.y + block.size.y / 2;
+			bool x = (fabs(groundCenterX - blockCenterX) < (groundBlock.size.x + block.size.x) / 2);
+			bool y = (fabs(groundCenterY - blockCenterY) < (groundBlock.size.y + block.size.y) / 2);
+			if (x && y) isGrounded = true; 
+		}
 	}
-	else if (inputManager->isKeyDown(SDLK_s))
+
+	
+	for (size_t i = 0; i < collidingBlocks.size(); ++i)
 	{
-		m_pos.y -= m_acceleration.y/3;
+		if (!intersects(collidingBlocks[i])) continue;
+		// Ceiling bumps
+		if (hitsBottomOf(collidingBlocks[i]) && XOverlap(collidingBlocks[i]) > m_size.x / 5)
+		{
+			pushOffY(collidingBlocks[i]);
+			collidingBlocks.erase(collidingBlocks.begin() + i);
+			if (m_velocity.y > 0.0f)
+				m_velocity.y = 0.0f;
+		}
+	//	else if (hitsTopOf(collidingBlocks[i]) && XOverlap(collidingBlocks[i]) > m_size.x / 20)
+	//	{
+//			isGrounded = true;
+	//	}
 	}
+
+	// Resolve in air wall collisions
+	if (!isGrounded)
+	{
+		for (size_t i = 0; i < collidingBlocks.size(); ++i)
+		{
+			if (intersects(collidingBlocks[i]))
+			{
+				if (hitsRightOf(collidingBlocks[i]))
+				{
+					pushOffX(collidingBlocks[i]);
+					if (m_velocity.x < 0.0f)
+						m_velocity.x = 0.0f;
+				}
+				else if (hitsLeftOf(collidingBlocks[i]))
+				{
+					pushOffX(collidingBlocks[i]);
+					if (m_velocity.x > 0.0f)
+						m_velocity.x = 0.0f;
+				}
+			}
+		}
+	}
+	// Resolve sink-into-ground collisions
+	else
+	{
+		for (size_t i = 0; i < collidingBlocks.size(); ++i)
+		{
+			if (intersects(collidingBlocks[i]) && hitsTopOf(collidingBlocks[i]) && XOverlap(collidingBlocks[i]) > m_size.x / 20)
+			{
+				pushOffY(collidingBlocks[i]);
+				collidingBlocks.erase(collidingBlocks.begin() + i);
+				if (m_velocity.y > 0.0f)
+					m_velocity.y = 0.0f;
+			}
+		}
+	}
+	// Resolve grounded wall collisions
+	for (size_t i = 0; i < collidingBlocks.size(); ++i)
+	{
+		if (intersects(collidingBlocks[i]))
+		{
+			if (hitsRightOf(collidingBlocks[i]))
+			{
+				pushOffX(collidingBlocks[i]);
+				if (m_velocity.x < 0.0f)
+					m_velocity.x = 0.0f;
+			}
+			else if (hitsLeftOf(collidingBlocks[i]))
+			{
+				pushOffX(collidingBlocks[i]);
+				if (m_velocity.x > 0.0f)
+					m_velocity.x = 0.0f;
+			}
+		}
+	}
+}
+
+
+void Player::update(float frameTime, const Level& level, InputManager* inputManager)
+{
+
 	// Update velocity based on input
 	if (inputManager->isKeyDown(SDLK_a))
 	{
@@ -55,69 +201,21 @@ void Player::update(float frameTime, const Level& level, InputManager* inputMana
 		else
 			m_velocity = glm::vec2(0, m_velocity.y);
 	}
-//	if (inputManager->isKeyPressed(SDLK_w) && isGrounded)
-//		m_velocity += glm::vec2(0, m_acceleration.y);
-	//if (inputManager->isKeyDown(SDLK_s))
 	
 	// Check for collisions
 	bool isGrounded = false;
-	enum { LEFT, RIGHT, TOP, BOTTOM };
 
 	// Check for collisions
-	float playerRight = m_pos.x + m_size.x;
-	float playerTop = m_pos.y + m_size.y;
-	for (auto& block : *levelData)
+	resolveCollisions(level, isGrounded);
+
+	if (inputManager->isKeyDown(SDLK_w))
 	{
-		float collisionDepth[4] = { 0.f, 0.f, 0.f, 0.0f };
-		bool collided[4] = { 0, 0, 0, 0 };
-		float blockRight = block.pos.x + block.size.x;
-		float blockTop = block.pos.y + block.size.y;
+//		m_pos.y += 0.3f;
+	}
 
-		if (m_pos.x < block.pos.x && playerRight > block.pos.x)
-		{
-			collisionDepth[RIGHT] = playerRight - block.pos.x;
-			if (collisionDepth[RIGHT] > m_size.x) collisionDepth[RIGHT] = 0.0f;
-			collided[RIGHT] = true;
-		}
-		if (block.pos.x < m_pos.x && blockRight > m_pos.x)
-		{
-			collisionDepth[LEFT] = blockRight - m_pos.x;
-			if (collisionDepth[LEFT] > m_size.x) collisionDepth[LEFT] = 0.0f;
-			collided[LEFT] = true;
-		}
-		if (m_pos.y < block.pos.y && playerTop > block.pos.y)
-		{
-			collisionDepth[TOP] = playerTop - block.pos.y;
-			if (collisionDepth[TOP] > m_size.y) collisionDepth[TOP] = 0.0f;
-			collided[TOP] = true;
-		}
-		if (block.pos.y < m_pos.y && blockTop > m_pos.y)
-		{
-			collisionDepth[BOTTOM] = blockTop - m_pos.y;
-			if (collisionDepth[BOTTOM] > m_size.y) collisionDepth[BOTTOM] = 0.0f;
-			collided[BOTTOM] = true;
-		}
-
-		if (collisionDepth[BOTTOM] && (collided[LEFT] || collided[RIGHT]))
-		{
-			isGrounded = true;
-			if (m_velocity.y < 0)
-				m_velocity.y = 0.0f;
-			m_pos.y += collisionDepth[BOTTOM] - 0.01f;
-		}
-		if (collisionDepth[LEFT] && (collided[TOP] || collided[BOTTOM]))
-		{
-			m_velocity.x = 0.0f;
-		//	m_pos.x += collisionDepth[LEFT];
-		}
-		if (collisionDepth[RIGHT] && (collided[TOP] || collided[BOTTOM]))
-		{
-			m_velocity.x = 0.0f;
-			m_pos.x -= collisionDepth[RIGHT] + 0.01f;
-		}
-	//	if (collided[BOTTOM])
-	//	if (collisionDepth[LEFT] + collisionDepth[BOTTOM] + collisionDepth[TOP] + collisionDepth[RIGHT] > 0)
-	//		printf("LEFT %f   RIGHT %f   TOP %f   BOTTOM %f\n", collisionDepth[LEFT], collisionDepth[RIGHT], collisionDepth[TOP], collisionDepth[BOTTOM]);
+	if (inputManager->isKeyDown(SDLK_s))
+	{
+		m_pos.y -= 0.3f;
 	}
 
 	// Gravity
@@ -126,7 +224,16 @@ void Player::update(float frameTime, const Level& level, InputManager* inputMana
 		const float GRAVITY_POWA = 1.5f;
 		m_velocity -= glm::vec2(0, GRAVITY_POWA);
 	}
-
+	else
+	{
+	// Can jump
+		if (inputManager->isKeyPressed(SDLK_w))
+		{
+			//m_pos.y += m_acceleration.y;
+			m_velocity.y += m_acceleration.y * 10;
+		}
+	}
+	printf("On Ground %d\n", (int)isGrounded);
 
 	// Update position
 	m_pos += frameTime * m_velocity;
