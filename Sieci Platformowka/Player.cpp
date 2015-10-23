@@ -178,6 +178,9 @@ void Player::resolveCollisions(const Level& level, bool& isGrounded)
 
 void Player::update(float frameTime, const Level& level, InputManager* inputManager)
 {
+	// Update position
+	m_pos += frameTime * m_velocity;
+
 	// Update velocity based on input
 	if (inputManager->isKeyDown(SDLK_a))
 	{
@@ -202,7 +205,6 @@ void Player::update(float frameTime, const Level& level, InputManager* inputMana
 		else
 			m_velocity = glm::vec2(0, m_velocity.y);
 	}
-	
 
 	bool isGrounded = false;
 
@@ -226,9 +228,7 @@ void Player::update(float frameTime, const Level& level, InputManager* inputMana
 		}
 	}
 //	printf("On Ground %d\n", (int)isGrounded);
-
-	// Update position
-	m_pos += frameTime * m_velocity;
+	
 }
 
 void Player::draw(SpriteBatch &spriteBatch)
